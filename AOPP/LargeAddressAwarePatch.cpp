@@ -118,7 +118,7 @@ __declspec(noinline)intptr_t __cdecl funkExecv(const char* FileName, const char*
 
 				
 				WCHAR   DllPath[MAX_PATH] = { 0 };
-				GetModuleFileNameW((HINSTANCE)&__ImageBase, DllPath, _countof(DllPath));
+				GetModuleFileNameW(reinterpret_cast<HINSTANCE>(&__ImageBase), DllPath, _countof(DllPath));
 
 				auto filename = fs::path(DllPath);
 				

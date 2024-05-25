@@ -60,8 +60,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
 #endif
 
 
-		bool waitForDebugger = false;
-		if (waitForDebugger)
+		if (bool waitForDebugger = false)
 		{
 			spdlog::info("Waiting for debugger to attach");
 			while (!::IsDebuggerPresent())

@@ -1,5 +1,4 @@
 #include "AutoOpenTextPatch.h"
-#include <polyhook2/CapstoneDisassembler.hpp>
 #include "PatternFinder.h"
 
 

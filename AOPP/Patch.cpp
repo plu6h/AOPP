@@ -3,14 +3,11 @@
 #include "dbghelp.h"
 #pragma comment(lib, "dbghelp.lib")
 
-#include "polyhook2/CapstoneDisassembler.hpp"
-
 
 #include <variant>
 
 #include "PatchManager.h"
 
-static PLH::CapstoneDisassembler dis(PLH::Mode::x86);
 
 hookData::hookData(std::string module, std::string mangledName, void* replacement)
 {
@@ -209,7 +206,7 @@ bool Patch::ApplyHook(hookData* hook)
 	if (hook->patchLocationPtr == nullptr)
 		return false;
 
-	hook->detour = new PLH::x86Detour(hook->patchLocationPtr, hook->replacementFunctionPtr, &hook->originalTramp, dis);
+	hook->detour = new PLH::x86Detour((uint64_t)hook->patchLocationPtr, (uint64_t)hook->replacementFunctionPtr, &hook->originalTramp);
 
 	const auto result = hook->detour->hook();
 

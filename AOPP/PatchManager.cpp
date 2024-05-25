@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 #include <polyhook2/Detour/x86Detour.hpp>
-#include <polyhook2/CapstoneDisassembler.hpp>
 #include "AutoRunPatch.h"
 #include "FramecapPatch.h"
 #include "NumpadTypePatch.h"
@@ -41,7 +40,7 @@ bool PatchManager::initialized()
 
 PatchManager::PatchManager()
 {
-	PLH::CapstoneDisassembler dis(PLH::Mode::x86);
+	
 	Configuration = std::make_unique<ConfigurationHolder>();
 
 	CHAR buff[32];
@@ -61,7 +60,7 @@ PatchManager::PatchManager()
 	}
 	
 	const char* ShowWindow = Patch::GetAddress<const char*>("User32.dll", "ShowWindow");
-	detour = new PLH::x86Detour(reinterpret_cast<const char*>(ShowWindow), reinterpret_cast<char*>(&ShowWindowHook), &originalTramp, dis);
+	detour = new PLH::x86Detour(reinterpret_cast<uint64_t>(ShowWindow), reinterpret_cast<uint64_t>(&ShowWindowHook), &originalTramp);
 
 	const auto result = detour->hook();
 
