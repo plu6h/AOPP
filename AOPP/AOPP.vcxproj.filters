@@ -141,7 +141,7 @@
       <Filter>Source Files\Patches</Filter>
     </ClCompile>
     <ClCompile Include="ViewDistancePatch.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Patches</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
