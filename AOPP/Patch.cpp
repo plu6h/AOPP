@@ -13,7 +13,7 @@ hookData::hookData(std::string module, std::string mangledName, void* replacemen
 {
 	Module = std::move(module);
 	FunctionName = std::move(mangledName);
-	replacementFunctionPtr = reinterpret_cast<char*>(replacement);
+	replacementFunctionPtr = static_cast<char*>(replacement);
 	detour = nullptr;
 	originalTramp = 0;
 
@@ -26,7 +26,7 @@ hookData::hookData(std::string module, std::string DummyName, const char* patchL
 {
 	Module = std::move(module);
 	FunctionName = std::move(DummyName);
-	replacementFunctionPtr = reinterpret_cast<char*>(replacement);
+	replacementFunctionPtr = static_cast<char*>(replacement);
 	detour = nullptr;
 	originalTramp = 0;
 
