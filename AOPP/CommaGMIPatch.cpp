@@ -82,8 +82,13 @@ char* HttpStreamParser__DoLoopFuncAdder()
 	return reinterpret_cast<char*>(jumpLoc);
 }
 
-const std::string replacement(".val().replace(/,/g, '')");
-const std::string target(".val()");
+
+const std::vector<std::pair<std::string, std::string>> targets =
+{
+	{ "$(':input[name=amount]').val()", "$(':input[name=amount]').val().replace(/,/g, '')" },
+	{ "$('#buyOrderUnitPrice').val()","$('#buyOrderUnitPrice').val().replace(/,/g, '')"},
+	{ "$('#sellOrderUnitPrice').val()","$('#sellOrderUnitPrice').val().replace(/,/g, '')"} 
+};
 __declspec(noinline) int __fastcall HttpStreamParser__DoLoop(HttpStreamParser* a1, void* EDX, int a2)
 {
 	typedef int(__thiscall* OriginalFunctionType)(HttpStreamParser*, int);
@@ -95,14 +100,17 @@ __declspec(noinline) int __fastcall HttpStreamParser__DoLoop(HttpStreamParser* a
 	{
 		std::string tmp;
 		tmp.assign(a1->user_read_buf_->data, result);
-		const auto search = tmp.find(target);
-
-		if (search != std::string::npos)
+		for (const auto& [target, replacement] : targets)
 		{
-			const auto lengthDelta = replacement.length() - target.length();
-			tmp.replace(search, target.length(), replacement);
-			memcpy(reinterpret_cast<char*>(a1->user_read_buf_->data), tmp.c_str(), tmp.length());
-			result += lengthDelta;
+			const auto search = tmp.find(target);
+
+			if (search != std::string::npos)
+			{
+				const auto lengthDelta = replacement.length() - target.length();
+				tmp.replace(search, target.length(), replacement);
+				memcpy(a1->user_read_buf_->data, tmp.c_str(), tmp.length());
+				result += lengthDelta;
+			}
 		}
 		
 	}
