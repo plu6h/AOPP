@@ -55,7 +55,7 @@ Patch to fix various bugs and add quality of life improvements to the game. Sinc
 
 ## System requirements
 
-* MS Visual C++ Redistributable for Visual Studio 2019 (https://aka.ms/vs/16/release/VC_redist.x86.exe)
+* MS Visual C++ Redistributable for Visual Studio 2022 (https://aka.ms/vs/17/release/vc_redist.x86.exe)
 
 
 ## Download
@@ -90,8 +90,8 @@ These instructions are only relevant to you if you want to modify the plugin. To
 * Checkout source codes with git, or download source code as ZIP and extract.
 * Use vcpkg (https://github.com/microsoft/vcpkg) to install the required libraries
 ```
-vckpg update
-vckpg install polyhook2:x86-windows-static gumbo:x86-windows-static spdlog:x86-windows-static nlohmann-json:x86-windows-static
+vcpkg update
+vcpkg install polyhook2:x86-windows-static gumbo:x86-windows-static spdlog:x86-windows-static nlohmann-json:x86-windows-static
 ```
 
 Once finished, the plugin file `mswsock.dll` will appear in the `Release` folder. 
