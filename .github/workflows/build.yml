@@ -47,7 +47,8 @@ jobs:
 
       - name: Integrate vcpkg with MSBuild
         shell: pwsh
-        run: & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
 
       - name: Build (Release|Win32)
         shell: pwsh
