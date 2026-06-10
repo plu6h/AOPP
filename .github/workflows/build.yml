@@ -50,9 +50,9 @@ jobs:
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
 
-      - name: Build (Release|Win32)
+      - name: Build (Release|x86)
         shell: pwsh
-        run: msbuild AOPP.sln /p:Configuration=Release /p:Platform=Win32 /m
+        run: msbuild AOPP.sln /p:Configuration=Release /p:Platform=x86 /m
 
       - name: Upload mswsock.dll
         uses: actions/upload-artifact@v4
