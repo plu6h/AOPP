@@ -107,13 +107,35 @@ __declspec(noinline)intptr_t __cdecl funkExecv(const char* FileName, const char*
 
 			if (exists(p))
 			{
+				std::error_code ec;
+
+				WCHAR cwdBuf[MAX_PATH] = { 0 };
+				GetCurrentDirectoryW(_countof(cwdBuf), cwdBuf);
+				spdlog::info("Working directory at relaunch: {}", fs::path(cwdBuf).string());
+
+				//install dir comes from anarchy.exe's own path, not the cwd
+				WCHAR launcherPath[MAX_PATH] = { 0 };
+				GetModuleFileNameW(nullptr, launcherPath, _countof(launcherPath));
+				const auto installDir = fs::path(launcherPath).parent_path();
+
+				fs::path originalExe = fs::path(FileName);
+				if (!originalExe.is_absolute())
+					originalExe = installDir / originalExe.filename();
+
 				auto exe = p / "AnarchyOnline.exe";
 
+				spdlog::info("Launcher: {}", fs::path(launcherPath).string());
+				spdlog::info("Original executable: {}", originalExe.string());
+				spdlog::info("Install directory: {}", installDir.string());
 				spdlog::info("Copying AnarchyOnline.exe to {}", exe.string());
 
-				
-				std::error_code ec;
-				std::filesystem::copy(FileName, exe,std::filesystem::copy_options::overwrite_existing, ec);
+				std::filesystem::copy(originalExe, exe, std::filesystem::copy_options::overwrite_existing, ec);
+				if (ec)
+				{
+					spdlog::error("Failed to copy {} to {}: {}; launching unmodified", originalExe.string(), exe.string(), ec.message());
+					return reinterpret_cast<originalFunctionHeader>(funkyExecvHook.originalTramp)(FileName, Arguments);
+				}
+
 				SetLAA(exe.string().c_str(), true);
 
 				
@@ -126,7 +148,24 @@ __declspec(noinline)intptr_t __cdecl funkExecv(const char* FileName, const char*
 
 				spdlog::info("Copying {} to {}", filename.filename().string(), dll.string());
 				
-				std::filesystem::copy(DllPath,dll, std::filesystem::copy_options::overwrite_existing, ec);
+				std::filesystem::copy(DllPath, dll, std::filesystem::copy_options::overwrite_existing, ec);
+				if (ec)
+				{
+					spdlog::error("Failed to copy {} to {}: {}; launching unmodified", fs::path(DllPath).string(), dll.string(), ec.message());
+					return reinterpret_cast<originalFunctionHeader>(funkyExecvHook.originalTramp)(FileName, Arguments);
+				}
+
+				if (!installDir.empty())
+				{
+					if (SetCurrentDirectoryW(installDir.wstring().c_str()))
+					{
+						spdlog::info("Set working directory to {}", installDir.string());
+					}
+					else
+					{
+						spdlog::error("Failed to set working directory to {} (error {})", installDir.string(), GetLastError());
+					}
+				}
 
 				fclose(stdin);
 				fclose(stdout);
@@ -153,6 +192,24 @@ hookData funkyExecvHook("msvcr100", "_execv", &funkExecv);
 
 bool LargeAddressAwarePatch::_ApplyPatch()
 {
+	//pin cwd to the install dir so the launcher (and the client it relaunches) can find their data
+	WCHAR launcherPath[MAX_PATH] = { 0 };
+	if (GetModuleFileNameW(nullptr, launcherPath, _countof(launcherPath)) > 0)
+	{
+		const auto installDir = fs::path(launcherPath).parent_path();
+
+		WCHAR cwdBuf[MAX_PATH] = { 0 };
+		GetCurrentDirectoryW(_countof(cwdBuf), cwdBuf);
+		spdlog::info("Working directory at startup: {}", fs::path(cwdBuf).string());
+
+		if (!installDir.empty())
+		{
+			if (SetCurrentDirectoryW(installDir.wstring().c_str()))
+				spdlog::info("Anchored working directory to install folder: {}", installDir.string());
+			else
+				spdlog::error("Failed to anchor working directory to {} (error {})", installDir.string(), GetLastError());
+		}
+	}
 
 	//Check if we have write permission for the active directory, we have to-do some janky stuff we if we don't
 	//if (std::filesystem::exists("AnarchyOnline.exe"))
