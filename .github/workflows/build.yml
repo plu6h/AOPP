@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+# Allow the built-in GITHUB_TOKEN to create releases (only used on tag pushes).
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    env:
+      # Cache built vcpkg packages in the GitHub Actions cache so the (slow)
+      # polyhook2/gumbo/spdlog builds only happen once.
+      VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Required for the vcpkg "x-gha" binary cache backend.
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Install dependencies (vcpkg)
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install `
+            polyhook2:x86-windows-static `
+            gumbo:x86-windows-static `
+            spdlog:x86-windows-static `
+            nlohmann-json:x86-windows-static
+
+      - name: Integrate vcpkg with MSBuild
+        shell: pwsh
+        run: & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
+
+      - name: Build (Release|Win32)
+        shell: pwsh
+        run: msbuild AOPP.sln /p:Configuration=Release /p:Platform=Win32 /m
+
+      - name: Upload mswsock.dll
+        uses: actions/upload-artifact@v4
+        with:
+          name: mswsock-dll
+          path: Release/mswsock.dll
+          if-no-files-found: error
+
+      # Only runs when the workflow was triggered by pushing a tag like v1.2.0.
+      # Creates (or updates) the GitHub Release for that tag and attaches the DLL.
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Release/mswsock.dll
+          generate_release_notes: true
