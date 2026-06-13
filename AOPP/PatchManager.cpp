@@ -67,6 +67,8 @@ PatchManager::PatchManager()
 	if (!result)
 	{
 		spdlog::error("Failed to apply hook initial hook {}", PLH::ErrorLog::singleton().pop().msg);
+		delete detour;
+		detour = nullptr;
 	}
 
 
@@ -121,6 +123,7 @@ __declspec(noinline) HWND __stdcall ShowWindowHook(params)
 		
 		detour->unHook();
 		delete detour;
+		detour = nullptr;
 	}
 	
 	return result;

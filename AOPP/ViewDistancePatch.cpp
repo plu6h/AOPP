@@ -44,7 +44,7 @@ void ViewDistancePatch::updateViewDistance(double newValue) const
 	const auto pref = GetPrefFloat(instance, "ViewDistance", 0);
 	
 	SetPrefFloat(instance, "ViewDistance", 0, 0, 1);
-	SetPrefFloat(instance, "ViewDistance", pref, 0, 1);
+	SetPrefFloat(instance, "ViewDistance", static_cast<float>(pref), 0, 1);
 	
 }
 

@@ -17,7 +17,7 @@ void SetLAA(const char* FileName, bool state)
 	std::fstream baseExecutable(FileName, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
 	if (baseExecutable.is_open())
 	{
-		const auto size = baseExecutable.tellg();
+		const auto size = static_cast<std::size_t>(baseExecutable.tellg());
 		auto memblock = new char[size] {};
 
 		baseExecutable.seekg(0, std::ios::beg);

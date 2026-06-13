@@ -9,7 +9,7 @@ ConfigurationHolder::ConfigurationHolder()
 	{
 		i >> config;
 	}
-	catch (nlohmann::detail::parse_error & e)
+	catch (nlohmann::detail::parse_error &)
 	{
 		config = nlohmann::json::object();
 	}

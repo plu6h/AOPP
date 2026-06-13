@@ -4,6 +4,7 @@
 #pragma comment(lib, "dbghelp.lib")
 
 
+#include <algorithm>
 #include <variant>
 
 #include "PatchManager.h"
@@ -206,6 +207,11 @@ bool Patch::ApplyHook(hookData* hook)
 	if (hook->patchLocationPtr == nullptr)
 		return false;
 
+	// Already applied (e.g. retry after a partial _ApplyPatch failure);
+	// don't allocate a second detour for the same location.
+	if (std::find(std::begin(appliedHooks), std::end(appliedHooks), hook) != std::end(appliedHooks))
+		return true;
+
 	hook->detour = new PLH::x86Detour((uint64_t)hook->patchLocationPtr, (uint64_t)hook->replacementFunctionPtr, &hook->originalTramp);
 
 	const auto result = hook->detour->hook();
@@ -216,6 +222,8 @@ bool Patch::ApplyHook(hookData* hook)
 	if (!result)
 	{
 		spdlog::error("Failed to apply hook for {}[{},{}] {}", Name(),hook->Module, bufout, PLH::ErrorLog::singleton().pop().msg);
+		delete hook->detour;
+		hook->detour = nullptr;
 		return false;
 	}
 

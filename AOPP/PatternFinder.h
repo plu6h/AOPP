@@ -21,7 +21,7 @@ private:
 	int CodeBase = 0;
 	
 	
-	signed char* _data;
+	signed char* _data = nullptr;
 	std::vector<intptr_t> Find(std::vector<int>&& pattern) const;
 
 	static bool ByteMatch(signed char* bytes, int start, std::vector<int>& pattern);
