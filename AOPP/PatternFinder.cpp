@@ -2,6 +2,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cstring>
 #include <iostream>
 
 PatternFinder::PatternFinder(const std::string& module)
@@ -99,19 +100,61 @@ std::vector<intptr_t> PatternFinder::FindPattern(const std::string& pattern, con
 std::vector<intptr_t> PatternFinder::Find(std::vector<int> &&  pattern) const
 {
 	std::vector<intptr_t> ret;
-	int plen = pattern.size();
-	int dataLength = _dataLength - plen;
-	for (int i = 0; i < dataLength; i++)
+	const int plen = static_cast<int>(pattern.size());
+
+	// Restrict the scan to the .text section: [CodeBase, CodeBase + SizeOfCode).
+	// Offsets stay relative to the module base, so callers are unaffected.
+	if (plen == 0 || _dataLength - CodeBase < plen)
+		return ret;
+
+	// Find the longest contiguous run of non-wildcard bytes; its first byte is the scan anchor.
+	int runStart = 0;
+	int runLen = 0;
+	for (int i = 0, curStart = 0, curLen = 0; i < plen; i++)
 	{
+		if (pattern[i] != -1)
+		{
+			if (curLen == 0)
+				curStart = i;
+			if (++curLen > runLen)
+			{
+				runLen = curLen;
+				runStart = curStart;
+			}
+		}
+		else
+		{
+			curLen = 0;
+		}
+	}
+
+	// An all-wildcard pattern would match everywhere; treat it as no match.
+	if (runLen == 0)
+		return ret;
+
+	// Use the SIMD-optimized CRT memchr to jump between candidate positions of the
+	// anchor byte, then verify the full pattern (wildcards included) around each hit.
+	// A pattern match at offset 'i' places the anchor at 'i + runStart', so anchor
+	// candidates live in [CodeBase + runStart, _dataLength - plen + runStart].
+	const unsigned char anchor = static_cast<unsigned char>(pattern[runStart]);
+	signed char* it = _data + CodeBase + runStart;
+	signed char* const end = _data + _dataLength - plen + runStart + 1;
+	while (it < end)
+	{
+		it = static_cast<signed char*>(memchr(it, anchor, end - it));
+		if (!it)
+			break;
+		const int i = static_cast<int>(it - _data) - runStart;
 		if (ByteMatch(_data, i, pattern))
 			ret.push_back(i);
+		++it;
 	}
 	return ret;
 }
 
 bool PatternFinder::ByteMatch(signed char* bytes, int start, std::vector<int>& pattern)
 {
-	for (int i = start, j = 0; j < pattern.size(); i++, j++)
+	for (int i = start, j = 0; j < static_cast<int>(pattern.size()); i++, j++)
 	{
 		if (pattern[j] == -1)
 			continue;
